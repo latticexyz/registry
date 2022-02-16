@@ -14,7 +14,7 @@ contract RegistryTest is BaseTest {
 
     function setUp() public {
         vm.startPrank(deployer);
-        registry = new Registry("L", "L");
+        registry = new Registry("L", "L", address(0));
         vm.stopPrank();
     }
 

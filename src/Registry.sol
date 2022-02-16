@@ -15,19 +15,34 @@ interface ERC721TokenReceiver {
     ) external returns (bytes4);
 }
 
+interface ChannelTokenURIGenerator {
+    function generateTokenURI(
+        uint256 channelId,
+        address owner 
+    ) external view returns (string memory);
+}
+
 struct Deployment {
     address contractAddress;
     uint256 chainId;
-    string deploymentUri;
+    string deploymentURI;
 }
+// TODO @smsunarto:
+// Do we store the deployment IDs in channel on-chain?
 
 contract Registry is BaseRelayRecipient, ERC721 {
+    event ChannelCreated(uint256 indexed channelId, string indexed channelName, address indexed channelOwner);
+    event DeploymentCreated(uint256 indexed deploymentId, address indexed deployer, Deployment deployment);
+    event DeploymentAddedToChannel(uint256 indexed channelId, uint256 indexed deploymentId);
+    event DeploymentRemovedFromChannel(uint256 indexed channelId, uint256 indexed deploymentId);
+
     address public contractOwner;
     uint256 internal currentDeploymentId;
     uint256 internal currentChannelId;
 
-    // CHANNELS
+    ChannelTokenURIGenerator public channelTokenURIGenerator;
 
+    // CHANNELS
     // address => can mint channel
     mapping(address => bool) public isMinter;
     // channel name => channel id
@@ -46,11 +61,13 @@ contract Registry is BaseRelayRecipient, ERC721 {
 
     constructor(
         string memory name,
-        string memory symbol
+        string memory symbol,
+        address channelTokenURIGeneratorAddr
     ) ERC721(name, symbol) {
         currentDeploymentId = 1;
         currentChannelId = 1;
         contractOwner = msg.sender;
+        channelTokenURIGenerator = ChannelTokenURIGenerator(channelTokenURIGeneratorAddr);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -92,6 +109,10 @@ contract Registry is BaseRelayRecipient, ERC721 {
         isMinter[minter] = allowMint;
     }
 
+    function setChannelTokenURIGeneratorAddress(address channelTokenURIGeneratorAddr) public onlyContractOwner {
+        channelTokenURIGenerator = ChannelTokenURIGenerator(channelTokenURIGeneratorAddr);
+    }
+
     function setOwner(address newContractOwner) public onlyContractOwner {
         require(newContractOwner != address(0), "ZERO_ADDR");
         contractOwner = newContractOwner;
@@ -101,8 +122,37 @@ contract Registry is BaseRelayRecipient, ERC721 {
                                DEPLOYMENTS
     //////////////////////////////////////////////////////////////*/
 
+    function createDeployment(address contractAddress, uint256 chainId, string calldata deploymentURI) public {
+        require(contractAddress != address(0), "ZERO_ADDR");
+        require(chainId != 0, "NO_CHAIN_ID");
+        require(bytes(deploymentURI).length != 0, "NO_DEPLOYMENT_URI");
 
+        address deployer = _msgSender();
 
+        deployments[currentDeploymentId] = Deployment({
+            contractAddress: contractAddress,
+            chainId: chainId,
+            deploymentURI: deploymentURI
+        });
+
+        deployerOf[currentDeploymentId] = deployer;
+        emit DeploymentCreated(currentDeploymentId, deployer, deployments[currentDeploymentId]);
+        currentDeploymentId++;
+    }
+    
+    /*///////////////////////////////////////////////////////////////
+                               CHANNELS
+    //////////////////////////////////////////////////////////////*/
+
+    function addDeploymentToChannel(uint256 channelId, uint256 deploymentId) public onlyChannelOwner(channelId) {
+        require(deployerOf[deploymentId] != address(0));
+        emit DeploymentAddedToChannel(channelId, deploymentId);
+    }
+
+    function removeDeploymentFromChannel(uint256 channelId, uint256 deploymentId) public onlyChannelOwner(channelId) {
+        require(deployerOf[deploymentId] != address(0));
+        emit DeploymentRemovedFromChannel(channelId, deploymentId);
+    }
 
     /*///////////////////////////////////////////////////////////////
                                ERC721
@@ -113,6 +163,7 @@ contract Registry is BaseRelayRecipient, ERC721 {
         _mint(to, currentChannelId);
         channelNameToChannelId[channelName] = currentChannelId;
         channelIdToChannelName[currentChannelId] = channelName;
+        emit ChannelCreated(currentChannelId, channelName, ownerOf[currentChannelId]);
         currentChannelId++;
     }
 
@@ -202,7 +253,8 @@ contract Registry is BaseRelayRecipient, ERC721 {
         );
     }
 
-    function tokenURI(uint256 personaId) public view override returns (string memory) {
-        return "";
+    function tokenURI(uint256 channelId) public view override returns (string memory) {
+        require(channelId < currentChannelId, "TOKEN_DOES_NOT_EXIST");
+        return channelTokenURIGenerator.generateTokenURI(channelId, ownerOf[channelId]);
     }
 }
