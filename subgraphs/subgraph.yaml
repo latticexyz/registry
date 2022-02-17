@@ -1,15 +1,15 @@
 specVersion: 0.0.2
-description: Persona
-repository: https://github.com/latticexyz/persona
+description: Registry
+repository: https://github.com/latticexyz/registry
 schema:
   file: ./schema.graphql
 dataSources:
   - kind: ethereum
-    name: Persona
+    name: Registry
     network: xdai
     source:
       address: "0x744e6a2e3b88ca682abbeb32cb4b09110f9eedaf"
-      abi: Persona
+      abi: Registry
       startBlock: 20591121
     mapping:
       kind: ethereum/events
@@ -20,8 +20,8 @@ dataSources:
         - Owner
         - Transfer
       abis:
-        - name: Persona
-          file: ./abis/Persona.json
+        - name: Registry
+          file: ./abis/Registry.json
       eventHandlers:
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleTransfer

@@ -14,12 +14,12 @@
     "// deployment and tasks": "",
     "deploy": "zx src/deployments/deploy.mjs",
     "// subgraphs": "",
-    "foundry:build": "forge build --force && cp out/Persona.sol/Persona.json abi/ && cp out/PersonaMirror.sol/PersonaMirror.json abi/",
-    "graph:export-abi": "yarn foundry:build && cp out/Persona.sol/Persona.json subgraphs/L1/abis/ && cp out/PersonaMirror.sol/PersonaMirror.json subgraphs/L2/abis/",
-    "graph:codegen": "yarn graph:export-abi && graph codegen subgraphs/L1/subgraph.yaml -o subgraphs/L1/generated && graph codegen subgraphs/L2/subgraph.yaml -o subgraphs/L2/generated",
-    "graph:build:subgraph": "graph build subgraphs/L1/subgraph.yaml -o subgraph-build/L1 && graph build subgraphs/L2/subgraph.yaml -o subgraph-build/L2",
+    "foundry:build": "forge build --force && cp out/Registry.sol/Registry.json abi/",
+    "graph:export-abi": "yarn foundry:build && cp out/Registry.sol/Registry.json subgraphs/abis/",
+    "graph:codegen": "yarn graph:export-abi && graph codegen subgraphs/subgraph.yaml -o subgraphs/generated",
+    "graph:build:subgraph": "graph build subgraphs/subgraph.yaml -o subgraph-build",
     "graph:build": "yarn graph:export-abi && yarn graph:codegen && yarn graph:build:subgraph",
-    "graph:deploy": "graph deploy --node https://api.thegraph.com/deploy/ latticexyz/persona-l1 subgraphs/L1/subgraph.yaml"
+    "graph:deploy": "graph deploy --node https://api.thegraph.com/deploy/ latticexyz/registry subgraphs/subgraph.yaml"
   },
   "repository": {
     "type": "git",

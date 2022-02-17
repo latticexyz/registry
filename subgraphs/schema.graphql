@@ -1,19 +1,39 @@
-type Persona @entity {
+type Channel @entity {
   id: ID!
-  owner: Owner
-  uri: String
-  transfers: [Transfer!]! @derivedFrom(field: "persona")
+  name: String!
+  owner: Owner!
+  uri: String!
+  transfers: [Transfer!]! @derivedFrom(field: "channel")
+  instances: [InstanceChannel!]! @derivedFrom(field: "channel")
+}
+
+type InstanceChannel @entity {
+  id: ID!
+  instance: Instance!
+  channel: Channel!
+  timestamp: BigInt!
+  block: BigInt!
+  transactionHash: String!
+}
+
+type Instance @entity {
+  id: ID!
+  contractAddress: String!
+  chainId: BigInt!
+  uri: String!
+  creator: String!
+  channels: [InstanceChannel!]! @derivedFrom(field: "instance")
 }
 
 type Owner @entity {
   id: ID!
-  ownedPersonas: [Persona!]! @derivedFrom(field: "owner")
+  ownedChannels: [Channel!]! @derivedFrom(field: "owner")
   balance: BigInt!
 }
 
 type Transfer @entity {
   id: ID!
-  persona: Persona!
+  channel: Channel!
   # Empty from is minting
   from: Owner
   # Empty to is burning

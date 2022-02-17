@@ -1,9 +1,9 @@
-import { log, BigInt } from '@graphprotocol/graph-ts';
-import { Persona, Transfer as TransferEvent } from '../generated/Persona/Persona';
-import { Persona as PersonaEntity, Owner, Transfer } from '../generated/schema';
+import { log, BigInt, store } from '@graphprotocol/graph-ts';
+import { InstanceAddedToChannel, InstanceCreated, InstanceRemovedFromChannel, Registry, Transfer as TransferEvent } from '../generated/Registry/Registry';
+import { Channel, Instance, InstanceChannel, Owner, Transfer } from '../generated/schema';
 
 export function handleTransfer(event: TransferEvent): void {
-  log.debug('Transfer detected. From: {} | To: {} | TokenID: {}', [
+  log.info('Transfer detected. From: {} | To: {} | TokenID: {}', [
     event.params.from.toHexString(),
     event.params.to.toHexString(),
     event.params.id.toHexString(),
@@ -11,12 +11,12 @@ export function handleTransfer(event: TransferEvent): void {
 
   let previousOwner = Owner.load(event.params.from.toHexString());
   let newOwner = Owner.load(event.params.to.toHexString());
-  let persona = PersonaEntity.load(event.params.id.toHexString());
+  let channel = Channel.load(event.params.id.toHexString());
   let transferId = event.transaction.hash
     .toHexString()
     .concat(':'.concat(event.transactionLogIndex.toHexString()));
   let transfer = Transfer.load(transferId);
-  let instance = Persona.bind(event.address);
+  let registry = Registry.bind(event.address);
 
   if (previousOwner == null &&
     event.params.from.toHexString() != "0x0000000000000000000000000000000000000000") {
@@ -37,31 +37,128 @@ export function handleTransfer(event: TransferEvent): void {
     newOwner.balance = prevBalance.plus(BigInt.fromI32(1));
   }
 
-  if (persona == null) {
-    persona = new PersonaEntity(event.params.id.toHexString());
-    let uri = instance.try_tokenURI(event.params.id);
+  if (channel == null) {
+    channel = new Channel(event.params.id.toHexString());
+    const channelName = registry.try_channelIdToChannelName(event.params.id);
+    const uri = registry.try_tokenURI(event.params.id);
     if (!uri.reverted) {
-      persona.uri = uri.value;
+      channel.uri = uri.value;
+    } else {
+      throw new Error("tokenURI reverted");
+    }
+    if (!channelName.reverted) {
+      channel.name = channelName.value;
+    } else {
+      throw new Error("channelIdToChannelName reverted");
     }
   }
 
-  persona.owner = event.params.to.toHexString();
+  channel.owner = event.params.to.toHexString();
 
   if (transfer == null) {
     transfer = new Transfer(transferId);
-    transfer.persona = event.params.id.toHexString();
+    transfer.channel = event.params.id.toHexString();
     transfer.from = event.params.from.toHexString();
     transfer.to = event.params.to.toHexString();
     transfer.timestamp = event.block.timestamp;
     transfer.block = event.block.number;
     transfer.transactionHash = event.transaction.hash.toHexString();
   }
+
   if (previousOwner) {
     previousOwner.save();
   }
   if (newOwner) {
     newOwner.save();
   }
-  persona.save();
+  channel.save();
   transfer.save();
+}
+
+export function handleInstanceCreated(event: InstanceCreated): void {
+
+  log.info('InstanceCreated detected. From: {} | InstanceId: {}', [
+    event.params.creator.toHexString(),
+    event.params.instanceId.toHexString(),
+  ]);
+
+  const instance = new Instance(event.params.instanceId.toHexString());
+
+  instance.contractAddress = event.params.instance.value0.toString();
+  instance.chainId = event.params.instance.value1;
+  instance.uri = event.params.instance.value2;
+  instance.creator = event.params.creator.toString();
+
+  instance.save();
+}
+
+export function handleInstanceAddedToChannel(event: InstanceAddedToChannel): void {
+
+  log.info('InstanceAddedToChannel detected. ChannelId: {} | InstanceId: {}', [
+    event.params.channelId.toHexString(),
+    event.params.instanceId.toHexString(),
+  ]);
+
+  const instance = Instance.load(event.params.instanceId.toHexString());
+
+  if(!instance) {
+    return;
+  }
+
+  const channel = Channel.load(event.params.channelId.toHexString());
+
+  if(!channel) {
+    return;
+  }
+
+  const instanceChannelId = event.params.instanceId
+  .toHexString()
+  .concat(':'.concat(event.params.channelId.toHexString())); 
+
+  if(InstanceChannel.load(instanceChannelId)) {
+    // skip duplicate
+    return
+  }
+
+  const instanceChannel = new InstanceChannel(instanceChannelId);
+  
+  instanceChannel.instance = event.params.instanceId.toHexString();
+  instanceChannel.channel = event.params.channelId.toHexString();
+  instanceChannel.timestamp = event.block.timestamp;
+  instanceChannel.block = event.block.number;
+  instanceChannel.transactionHash = event.transaction.hash.toString();
+
+  instanceChannel.save();
+}
+
+
+export function handleInstanceRemovedFromChannel(event: InstanceRemovedFromChannel): void {
+
+  log.info('InstanceRemovedToChannel detected. ChannelId: {} | InstanceId: {}', [
+    event.params.channelId.toHexString(),
+    event.params.instanceId.toHexString(),
+  ]);
+
+  const instance = Instance.load(event.params.instanceId.toHexString());
+
+  if(!instance) {
+    return;
+  }
+
+  const channel = Channel.load(event.params.channelId.toHexString());
+
+  if(!channel) {
+    return;
+  }
+
+  const instanceChannelId = event.params.instanceId
+  .toHexString()
+  .concat(':'.concat(event.params.channelId.toHexString())); 
+
+  if(!InstanceChannel.load(instanceChannelId)) {
+    // can't delete connections that don't exist
+    return
+  }
+
+  store.remove("InstanceChannel", instanceChannelId)
 }

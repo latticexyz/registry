@@ -22,22 +22,20 @@ interface ChannelTokenURIGenerator {
     ) external view returns (string memory);
 }
 
-struct Deployment {
+struct Instance {
     address contractAddress;
     uint256 chainId;
-    string deploymentURI;
+    string instanceURI;
 }
-// TODO @smsunarto:
-// Do we store the deployment IDs in channel on-chain?
 
 contract Registry is BaseRelayRecipient, ERC721 {
     event ChannelCreated(uint256 indexed channelId, string indexed channelName, address indexed channelOwner);
-    event DeploymentCreated(uint256 indexed deploymentId, address indexed deployer, Deployment deployment);
-    event DeploymentAddedToChannel(uint256 indexed channelId, uint256 indexed deploymentId);
-    event DeploymentRemovedFromChannel(uint256 indexed channelId, uint256 indexed deploymentId);
+    event InstanceCreated(uint256 indexed instanceId, address indexed creator, Instance instance);
+    event InstanceAddedToChannel(uint256 indexed channelId, uint256 indexed instanceId);
+    event InstanceRemovedFromChannel(uint256 indexed channelId, uint256 indexed instanceId);
 
     address public contractOwner;
-    uint256 internal currentDeploymentId;
+    uint256 internal currentInstanceId;
     uint256 internal currentChannelId;
 
     ChannelTokenURIGenerator public channelTokenURIGenerator;
@@ -51,12 +49,12 @@ contract Registry is BaseRelayRecipient, ERC721 {
     mapping(uint256 => string) public channelIdToChannelName;
 
 
-    // DEPLOYMENTS
+    // INSTANCES
 
-    // deployment id => deployer
-    mapping(uint256 => address) public deployerOf;
-    // deployment id => deployment
-    mapping(uint256 => Deployment) public deployments;
+    // instance id => creator
+    mapping(uint256 => address) public creatorOf;
+    // instance id => instance
+    mapping(uint256 => Instance) public instances;
     
 
     constructor(
@@ -64,7 +62,7 @@ contract Registry is BaseRelayRecipient, ERC721 {
         string memory symbol,
         address channelTokenURIGeneratorAddr
     ) ERC721(name, symbol) {
-        currentDeploymentId = 1;
+        currentInstanceId = 1;
         currentChannelId = 1;
         contractOwner = msg.sender;
         channelTokenURIGenerator = ChannelTokenURIGenerator(channelTokenURIGeneratorAddr);
@@ -86,6 +84,11 @@ contract Registry is BaseRelayRecipient, ERC721 {
 
     modifier onlyChannelOwner(uint256 channelId) {
         require(_msgSender() == ownerOf[channelId], "ONLY_CHANNEL_OWNER");
+        _;
+    }
+
+    modifier onlyInstanceCreator(uint256 instanceId) {
+        require(_msgSender() == creatorOf[instanceId], "ONLY_INSTANCE_CREATOR");
         _;
     }
 
@@ -119,39 +122,39 @@ contract Registry is BaseRelayRecipient, ERC721 {
     }
 
     /*///////////////////////////////////////////////////////////////
-                               DEPLOYMENTS
+                               INSTANCES
     //////////////////////////////////////////////////////////////*/
 
-    function createDeployment(address contractAddress, uint256 chainId, string calldata deploymentURI) public {
+    function createInstance(address contractAddress, uint256 chainId, string calldata instanceURI) public {
         require(contractAddress != address(0), "ZERO_ADDR");
         require(chainId != 0, "NO_CHAIN_ID");
-        require(bytes(deploymentURI).length != 0, "NO_DEPLOYMENT_URI");
+        require(bytes(instanceURI).length != 0, "NO_INSTANCE_URI");
 
-        address deployer = _msgSender();
+        address creator = _msgSender();
 
-        deployments[currentDeploymentId] = Deployment({
+        instances[currentInstanceId] = Instance({
             contractAddress: contractAddress,
             chainId: chainId,
-            deploymentURI: deploymentURI
+            instanceURI: instanceURI
         });
 
-        deployerOf[currentDeploymentId] = deployer;
-        emit DeploymentCreated(currentDeploymentId, deployer, deployments[currentDeploymentId]);
-        currentDeploymentId++;
+        creatorOf[currentInstanceId] = creator;
+        emit InstanceCreated(currentInstanceId, creator, instances[currentInstanceId]);
+        currentInstanceId++;
     }
     
     /*///////////////////////////////////////////////////////////////
                                CHANNELS
     //////////////////////////////////////////////////////////////*/
 
-    function addDeploymentToChannel(uint256 channelId, uint256 deploymentId) public onlyChannelOwner(channelId) {
-        require(deployerOf[deploymentId] != address(0));
-        emit DeploymentAddedToChannel(channelId, deploymentId);
+    function addInstanceToChannel(uint256 channelId, uint256 instanceId) public onlyChannelOwner(channelId) {
+        require(creatorOf[instanceId] != address(0));
+        emit InstanceAddedToChannel(channelId, instanceId);
     }
 
-    function removeDeploymentFromChannel(uint256 channelId, uint256 deploymentId) public onlyChannelOwner(channelId) {
-        require(deployerOf[deploymentId] != address(0));
-        emit DeploymentRemovedFromChannel(channelId, deploymentId);
+    function removeInstanceFromChannel(uint256 channelId, uint256 instanceId) public onlyChannelOwner(channelId) {
+        require(creatorOf[instanceId] != address(0));
+        emit InstanceRemovedFromChannel(channelId, instanceId);
     }
 
     /*///////////////////////////////////////////////////////////////
