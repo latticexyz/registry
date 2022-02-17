@@ -1,6 +1,29 @@
 import { ethers} from "ethers"
 import { argv } from "process";
-const [registryAddress, contractAddress, chainId, instanceURI, privateKey] = argv.slice(2) 
+import { createInterface } from "readline";
+const [registryAddress, privateKey] = argv.slice(2) 
+
+
+export async function question(query : string, options? : {choices: string[]}) {
+  let completer = undefined
+  if (Array.isArray(options?.choices)) {
+    completer = function completer(line : string) {
+      const completions = options!.choices
+      const hits = completions.filter((c) => c.startsWith(line))
+      return [hits.length ? hits : completions, line]
+    }
+  }
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    completer,
+  })
+  const question = (q : string) => new Promise<string>((resolve) => rl.question(q ?? '', resolve))
+  let answer = await question(query)
+  rl.close()
+  return answer
+}
+
 const ABI = `
 [
     {
@@ -34,6 +57,9 @@ const main = async () => {
   const signer = wallet.connect(provider)
   const registryInterface = new ethers.utils.Interface(ABI)
   const contract = new ethers.Contract(registryAddress, registryInterface, signer)
+  const contractAddress = await question("Contract address?: ")
+  const chainId = await question("Chain ID?: ")
+  const instanceURI = await question("InstanceURI?: ")
   const tx = await contract.createInstance(contractAddress, chainId, instanceURI)
   console.log(tx)
   const receipt = await tx.wait();

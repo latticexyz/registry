@@ -9,10 +9,7 @@ const SUBTASK = await question('Choose subtask: ', {
   choices: ['ADD_INSTANCE', 'ADD_INSTANCE_TO_CHANNEL', 'REMOVE_INSTANCE_FROM_CHANNEL', 'UPDATE_INSTANCE_URI']
 })
 if(SUBTASK === 'ADD_INSTANCE') {
-  const contractAddress = await question('Contract address: ')
-  const chainId = await question('Chain id: ')
-  const deploymentURI = await question('Deployment URI: ')
-  await $`yarn ts-node src/tasks/instance/add.ts ${REGISTRY_ADDRESS} ${contractAddress} ${chainId} ${deploymentURI} ${PRIVATE_KEY}`
+  await $`yarn ts-node src/tasks/instance/add.ts ${REGISTRY_ADDRESS} ${PRIVATE_KEY}`
   console.log(chalk.bold.green("Done!"))
 } else if(SUBTASK === "ADD_INSTANCE_TO_CHANNEL") {
   const instanceId = await question('Instance ID: ')
