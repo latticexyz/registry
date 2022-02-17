@@ -6,9 +6,13 @@ function parseForgeCreateDeploy(output) {
   return address
 }
 
-const PRIVATE_KEY = await question('Private key: ')
+const NAME = "Channel"
+const SYMBOL = "LTX-CHANNEL"
 
-const {stdout: output} = await $`bash src/deployments/deploy.sh ${NAME} ${SYMBOL} ${L1_BRIDGE} ${PRIVATE_KEY}`
+const PRIVATE_KEY = await question('Private key: ')
+const {stdout: tokenURIGeneratorOutput} = await $`bash src/deployments/deploy-token-uri-generator.sh ${PRIVATE_KEY}`
+const TOKEN_URI_GENERATOR_ADDRESS = parseForgeCreateDeploy(tokenURIGeneratorOutput)
+const {stdout: output} = await $`bash src/deployments/deploy.sh ${NAME} ${SYMBOL} ${TOKEN_URI_GENERATOR_ADDRESS} ${PRIVATE_KEY}`
 const address = parseForgeCreateDeploy(output)
 
 console.log(chalk.green(`Registry contract deployed at: ${address}`))

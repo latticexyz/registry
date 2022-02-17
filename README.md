@@ -1,3 +1,3 @@
 # Registry
 Deployment:
-- Gnosis Chain (100): `0x744e6a2e3b88ca682abbeb32cb4b09110f9eedaf`
+- Gnosis Chain (100): `0x23e94e7a7136a53d1a431eec490a9bf35e4dd2d3`
