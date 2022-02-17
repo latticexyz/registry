@@ -31,6 +31,7 @@ struct Instance {
 contract Registry is BaseRelayRecipient, ERC721 {
     event ChannelCreated(uint256 indexed channelId, string indexed channelName, address indexed channelOwner);
     event InstanceCreated(uint256 indexed instanceId, address indexed creator, Instance instance);
+    event InstanceURIUpdated(uint256 indexed instanceId, string instanceURI);
     event InstanceAddedToChannel(uint256 indexed channelId, uint256 indexed instanceId);
     event InstanceRemovedFromChannel(uint256 indexed channelId, uint256 indexed instanceId);
 
@@ -142,10 +143,38 @@ contract Registry is BaseRelayRecipient, ERC721 {
         emit InstanceCreated(currentInstanceId, creator, instances[currentInstanceId]);
         currentInstanceId++;
     }
+
+    function updateInstanceURI(uint256 instanceId, string calldata instanceURI) onlyInstanceCreator(instanceId) public {
+        require(bytes(instanceURI).length != 0, "NO_INSTANCE_URI");
+        instances[instanceId].instanceURI = instanceURI;
+        emit InstanceURIUpdated(instanceId, instanceURI);
+    }
     
     /*///////////////////////////////////////////////////////////////
                                CHANNELS
     //////////////////////////////////////////////////////////////*/
+
+    function _validateChannelName(string memory channelName) internal returns (bool) {
+        bytes memory _bytes = abi.encodePacked(bytes(channelName));
+        bytes1 char;
+        uint8 charInt;
+        for (uint256 i = 0; i < _bytes.length; i++){
+            char = _bytes[i];
+            charInt = uint8(char);
+            // Validation: No special characters
+            // Only lowercase letters and "-"
+            if (!((charInt >= 97 && charInt <= 122) || (charInt == 46))) {
+                return false;
+            }
+        }
+        if(_bytes.length < 3) {
+            return false;
+        }
+        if(_bytes.length > 30) {
+            return false;
+        }
+        return true;
+    }
 
     function addInstanceToChannel(uint256 channelId, uint256 instanceId) public onlyChannelOwner(channelId) {
         require(creatorOf[instanceId] != address(0));
@@ -161,7 +190,8 @@ contract Registry is BaseRelayRecipient, ERC721 {
                                ERC721
     //////////////////////////////////////////////////////////////*/
 
-    function mint(address to, string calldata channelName) public onlyMinter returns (uint256 id) {
+    function mint(address to, string memory channelName) public onlyMinter returns (uint256 id) {
+        require(_validateChannelName(channelName), "CHANNEL_NAME_INVALID");
         require(channelNameToChannelId[channelName] == 0, "CHANNEL_ALREADY_EXISTS");
         _mint(to, currentChannelId);
         channelNameToChannelId[channelName] = currentChannelId;

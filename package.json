@@ -14,6 +14,7 @@
     "// deployment and tasks": "",
     "deploy": "zx src/deployments/deploy.mjs",
     "task:mint": "zx src/tasks/mint/mint-tasks.mjs",
+    "task:instance": "zx src/tasks/instance/instance-tasks.mjs",
     "// subgraphs": "",
     "foundry:build": "forge build --force && cp out/Registry.sol/Registry.json abi/",
     "graph:export-abi": "yarn foundry:build && cp out/Registry.sol/Registry.json subgraphs/abis/",
@@ -36,7 +37,10 @@
     "@graphprotocol/graph-cli": "^0.26.0",
     "@graphprotocol/graph-ts": "^0.24.1",
     "@types/node": "^12.0.0",
+    "ethers": "^5.5.4",
     "release-it": "^14.12.4",
+    "ts-node": "^10.5.0",
+    "typescript": "^4.5.5",
     "zx": "^5.0.0"
   }
 }

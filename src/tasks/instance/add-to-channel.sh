@@ -1,0 +1,1 @@
+cast send $1 "addInstanceToChannel(uint256,uint256)" "$2" "$3" --rpc-url "https://rpc.xdaichain.com" --private-key $4

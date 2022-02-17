@@ -1,5 +1,5 @@
 import { log, BigInt, store } from '@graphprotocol/graph-ts';
-import { InstanceAddedToChannel, InstanceCreated, InstanceRemovedFromChannel, Registry, Transfer as TransferEvent } from '../generated/Registry/Registry';
+import { InstanceAddedToChannel, InstanceCreated, InstanceRemovedFromChannel, InstanceURIUpdated, Registry, Transfer as TransferEvent } from '../generated/Registry/Registry';
 import { Channel, Instance, InstanceChannel, Owner, Transfer } from '../generated/schema';
 
 export function handleTransfer(event: TransferEvent): void {
@@ -84,11 +84,26 @@ export function handleInstanceCreated(event: InstanceCreated): void {
 
   const instance = new Instance(event.params.instanceId.toHexString());
 
-  instance.contractAddress = event.params.instance.value0.toString();
+  instance.contractAddress = event.params.instance.value0.toHexString();
   instance.chainId = event.params.instance.value1;
   instance.uri = event.params.instance.value2;
-  instance.creator = event.params.creator.toString();
+  instance.creator = event.params.creator.toHexString();
 
+  instance.save();
+}
+
+export function handleInstanceURIUpdated(event: InstanceURIUpdated): void {
+
+  log.info('InstanceURIUpdated detected. InstanceId: {} | URI: {}', [
+    event.params.instanceId.toHexString(),
+    event.params.instanceURI.toString(),
+  ]);
+
+  const instance = Instance.load(event.params.instanceId.toHexString());
+  if(!instance) {
+    return
+  }
+  instance.uri = event.params.instanceURI;
   instance.save();
 }
 
@@ -126,7 +141,7 @@ export function handleInstanceAddedToChannel(event: InstanceAddedToChannel): voi
   instanceChannel.channel = event.params.channelId.toHexString();
   instanceChannel.timestamp = event.block.timestamp;
   instanceChannel.block = event.block.number;
-  instanceChannel.transactionHash = event.transaction.hash.toString();
+  instanceChannel.transactionHash = event.transaction.hash.toHexString();
 
   instanceChannel.save();
 }
