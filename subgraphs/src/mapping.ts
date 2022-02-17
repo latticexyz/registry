@@ -6,12 +6,12 @@ export function handleTransfer(event: TransferEvent): void {
   log.info('Transfer detected. From: {} | To: {} | TokenID: {}', [
     event.params.from.toHexString(),
     event.params.to.toHexString(),
-    event.params.id.toHexString(),
+    event.params.id.toString(),
   ]);
 
   let previousOwner = Owner.load(event.params.from.toHexString());
   let newOwner = Owner.load(event.params.to.toHexString());
-  let channel = Channel.load(event.params.id.toHexString());
+  let channel = Channel.load(event.params.id.toString());
   let transferId = event.transaction.hash
     .toHexString()
     .concat(':'.concat(event.transactionLogIndex.toHexString()));
@@ -38,7 +38,7 @@ export function handleTransfer(event: TransferEvent): void {
   }
 
   if (channel == null) {
-    channel = new Channel(event.params.id.toHexString());
+    channel = new Channel(event.params.id.toString());
     const channelName = registry.try_channelIdToChannelName(event.params.id);
     const uri = registry.try_tokenURI(event.params.id);
     if (!uri.reverted) {
@@ -57,7 +57,7 @@ export function handleTransfer(event: TransferEvent): void {
 
   if (transfer == null) {
     transfer = new Transfer(transferId);
-    transfer.channel = event.params.id.toHexString();
+    transfer.channel = event.params.id.toString();
     transfer.from = event.params.from.toHexString();
     transfer.to = event.params.to.toHexString();
     transfer.timestamp = event.block.timestamp;
@@ -79,10 +79,10 @@ export function handleInstanceCreated(event: InstanceCreated): void {
 
   log.info('InstanceCreated detected. From: {} | InstanceId: {}', [
     event.params.creator.toHexString(),
-    event.params.instanceId.toHexString(),
+    event.params.instanceId.toString(),
   ]);
 
-  const instance = new Instance(event.params.instanceId.toHexString());
+  const instance = new Instance(event.params.instanceId.toString());
 
   instance.contractAddress = event.params.instance.value0.toHexString();
   instance.chainId = event.params.instance.value1;
@@ -95,11 +95,11 @@ export function handleInstanceCreated(event: InstanceCreated): void {
 export function handleInstanceURIUpdated(event: InstanceURIUpdated): void {
 
   log.info('InstanceURIUpdated detected. InstanceId: {} | URI: {}', [
-    event.params.instanceId.toHexString(),
+    event.params.instanceId.toString(),
     event.params.instanceURI.toString(),
   ]);
 
-  const instance = Instance.load(event.params.instanceId.toHexString());
+  const instance = Instance.load(event.params.instanceId.toString());
   if(!instance) {
     return
   }
@@ -110,25 +110,25 @@ export function handleInstanceURIUpdated(event: InstanceURIUpdated): void {
 export function handleInstanceAddedToChannel(event: InstanceAddedToChannel): void {
 
   log.info('InstanceAddedToChannel detected. ChannelId: {} | InstanceId: {}', [
-    event.params.channelId.toHexString(),
-    event.params.instanceId.toHexString(),
+    event.params.channelId.toString(),
+    event.params.instanceId.toString(),
   ]);
 
-  const instance = Instance.load(event.params.instanceId.toHexString());
+  const instance = Instance.load(event.params.instanceId.toString());
 
   if(!instance) {
     return;
   }
 
-  const channel = Channel.load(event.params.channelId.toHexString());
+  const channel = Channel.load(event.params.channelId.toString());
 
   if(!channel) {
     return;
   }
 
   const instanceChannelId = event.params.instanceId
-  .toHexString()
-  .concat(':'.concat(event.params.channelId.toHexString())); 
+  .toString()
+  .concat(':'.concat(event.params.channelId.toString())); 
 
   if(InstanceChannel.load(instanceChannelId)) {
     // skip duplicate
@@ -137,8 +137,8 @@ export function handleInstanceAddedToChannel(event: InstanceAddedToChannel): voi
 
   const instanceChannel = new InstanceChannel(instanceChannelId);
   
-  instanceChannel.instance = event.params.instanceId.toHexString();
-  instanceChannel.channel = event.params.channelId.toHexString();
+  instanceChannel.instance = event.params.instanceId.toString();
+  instanceChannel.channel = event.params.channelId.toString();
   instanceChannel.timestamp = event.block.timestamp;
   instanceChannel.block = event.block.number;
   instanceChannel.transactionHash = event.transaction.hash.toHexString();
@@ -150,25 +150,25 @@ export function handleInstanceAddedToChannel(event: InstanceAddedToChannel): voi
 export function handleInstanceRemovedFromChannel(event: InstanceRemovedFromChannel): void {
 
   log.info('InstanceRemovedToChannel detected. ChannelId: {} | InstanceId: {}', [
-    event.params.channelId.toHexString(),
-    event.params.instanceId.toHexString(),
+    event.params.channelId.toString(),
+    event.params.instanceId.toString(),
   ]);
 
-  const instance = Instance.load(event.params.instanceId.toHexString());
+  const instance = Instance.load(event.params.instanceId.toString());
 
   if(!instance) {
     return;
   }
 
-  const channel = Channel.load(event.params.channelId.toHexString());
+  const channel = Channel.load(event.params.channelId.toString());
 
   if(!channel) {
     return;
   }
 
   const instanceChannelId = event.params.instanceId
-  .toHexString()
-  .concat(':'.concat(event.params.channelId.toHexString())); 
+  .toString()
+  .concat(':'.concat(event.params.channelId.toString())); 
 
   if(!InstanceChannel.load(instanceChannelId)) {
     // can't delete connections that don't exist
