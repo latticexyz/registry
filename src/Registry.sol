@@ -19,8 +19,10 @@ interface ChannelTokenURIGenerator {
     function generateTokenURI(
         uint256 channelId,
         address owner 
+        string calldata channelName
     ) external view returns (string memory);
 }
+
 
 struct Instance {
     address contractAddress;
@@ -288,6 +290,6 @@ contract Registry is BaseRelayRecipient, ERC721 {
 
     function tokenURI(uint256 channelId) public view override returns (string memory) {
         require(channelId < currentChannelId, "TOKEN_DOES_NOT_EXIST");
-        return channelTokenURIGenerator.generateTokenURI(channelId, ownerOf[channelId]);
+        return channelTokenURIGenerator.generateTokenURI(channelId, ownerOf[channelId], channelIdToChannelName[channelId]);
     }
 }
