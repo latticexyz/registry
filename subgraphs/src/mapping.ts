@@ -201,7 +201,7 @@ export function handleNewChannelTokenURIGenerator(event: NewChannelTokenURIGener
 
   let currentChannelId = callResult.value;
 
-  // Persona starts at 1
+  // Registry starts at 1
   for (let id = BigInt.fromI32(1); id.lt(currentChannelId); id = id.plus(BigInt.fromI32(1))) {
     let channel = Channel.load(id.toString());
 

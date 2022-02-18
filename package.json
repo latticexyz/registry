@@ -10,6 +10,7 @@
     "LICENSE"
   ],
   "scripts": {
+    "prepare": "git submodule update --init --recursive",
     "release": "release-it",
     "// deployment and tasks": "",
     "deploy": "zx src/deployments/deploy.mjs",
