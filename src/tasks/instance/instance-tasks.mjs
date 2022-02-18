@@ -14,12 +14,12 @@ if(SUBTASK === 'ADD_INSTANCE') {
 } else if(SUBTASK === "ADD_INSTANCE_TO_CHANNEL") {
   const instanceId = await question('Instance ID: ')
   const channelId = await question('Channel ID: ')
-  await $`bash src/tasks/instance/add-to-channel.sh ${REGISTRY_ADDRESS} ${instanceId} ${channelId} ${PRIVATE_KEY}`
+  await $`bash src/tasks/instance/add-to-channel.sh ${REGISTRY_ADDRESS} ${channelId} ${instanceId} ${PRIVATE_KEY}`
   console.log(chalk.bold.green("Done!"))
 } else if(SUBTASK === 'REMOVE_INSTANCE_FROM_CHANNEL') {
   const instanceId = await question('Instance ID: ')
   const channelId = await question('Channel ID: ')
-  await $`bash src/tasks/instance/remove-from-channel.sh ${REGISTRY_ADDRESS} ${instanceId} ${channelId} ${PRIVATE_KEY}`
+  await $`bash src/tasks/instance/remove-from-channel.sh ${REGISTRY_ADDRESS} ${channelId} ${instanceId} ${PRIVATE_KEY}`
   console.log(chalk.bold.green("Done!"))
 } else if(SUBTASK === "UPDATE_INSTANCE_URI") {
   const instanceId = await question('Instance ID: ')
