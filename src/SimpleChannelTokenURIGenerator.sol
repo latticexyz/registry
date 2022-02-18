@@ -5,7 +5,7 @@ import {Base64} from "base64/base64.sol";
 interface ChannelTokenURIGenerator {
     function generateTokenURI(
         uint256 channelId,
-        address owner 
+        address owner,
         string calldata channelName
     ) external view returns (string memory);
 }
@@ -43,16 +43,20 @@ contract SimpleChannelTokenURIGenerator is ChannelTokenURIGenerator {
         return string(buffer);
     }
 
-
-    function generateTokenURI(uint256 channelId, address owner, string calldata channelName) external view returns (string memory) {
+    function generateTokenURI(
+        uint256 channelId,
+        address owner,
+        string calldata channelName
+    ) external view returns (string memory) {
         return
             _encodeMetadataJSON(
                 abi.encodePacked(
                     '{"name": "Channel: ',
                     channelName,
                     unicode'", "description": "The Lattice Channels are used for the permisionless distribution of open games on the Lattice Protocol.\\n\\nView this NFT at [https://lattice.xyz/channel/',
-                    idString,
-                    '](https://lattice.xyz/channel/', channelName,
+                    channelId,
+                    "](https://lattice.xyz/channel/",
+                    channelId,
                     ')"}'
                 )
             );

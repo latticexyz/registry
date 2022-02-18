@@ -18,11 +18,10 @@ interface ERC721TokenReceiver {
 interface ChannelTokenURIGenerator {
     function generateTokenURI(
         uint256 channelId,
-        address owner 
+        address owner,
         string calldata channelName
     ) external view returns (string memory);
 }
-
 
 struct Instance {
     address contractAddress;
@@ -51,14 +50,12 @@ contract Registry is BaseRelayRecipient, ERC721 {
     // channel id => channel name
     mapping(uint256 => string) public channelIdToChannelName;
 
-
     // INSTANCES
 
     // instance id => creator
     mapping(uint256 => address) public creatorOf;
     // instance id => instance
     mapping(uint256 => Instance) public instances;
-    
 
     constructor(
         string memory name,
@@ -128,7 +125,11 @@ contract Registry is BaseRelayRecipient, ERC721 {
                                INSTANCES
     //////////////////////////////////////////////////////////////*/
 
-    function createInstance(address contractAddress, uint256 chainId, string calldata instanceURI) public {
+    function createInstance(
+        address contractAddress,
+        uint256 chainId,
+        string calldata instanceURI
+    ) public {
         require(contractAddress != address(0), "ZERO_ADDR");
         require(chainId != 0, "NO_CHAIN_ID");
         require(bytes(instanceURI).length != 0, "NO_INSTANCE_URI");
@@ -146,12 +147,12 @@ contract Registry is BaseRelayRecipient, ERC721 {
         currentInstanceId++;
     }
 
-    function updateInstanceURI(uint256 instanceId, string calldata instanceURI) onlyInstanceCreator(instanceId) public {
+    function updateInstanceURI(uint256 instanceId, string calldata instanceURI) public onlyInstanceCreator(instanceId) {
         require(bytes(instanceURI).length != 0, "NO_INSTANCE_URI");
         instances[instanceId].instanceURI = instanceURI;
         emit InstanceURIUpdated(instanceId, instanceURI);
     }
-    
+
     /*///////////////////////////////////////////////////////////////
                                CHANNELS
     //////////////////////////////////////////////////////////////*/
@@ -160,7 +161,7 @@ contract Registry is BaseRelayRecipient, ERC721 {
         bytes memory _bytes = abi.encodePacked(bytes(channelName));
         bytes1 char;
         uint8 charInt;
-        for (uint256 i = 0; i < _bytes.length; i++){
+        for (uint256 i = 0; i < _bytes.length; i++) {
             char = _bytes[i];
             charInt = uint8(char);
             // Validation: No special characters
@@ -169,10 +170,10 @@ contract Registry is BaseRelayRecipient, ERC721 {
                 return false;
             }
         }
-        if(_bytes.length < 3) {
+        if (_bytes.length < 3) {
             return false;
         }
-        if(_bytes.length > 30) {
+        if (_bytes.length > 30) {
             return false;
         }
         return true;
@@ -269,7 +270,6 @@ contract Registry is BaseRelayRecipient, ERC721 {
                 ERC721TokenReceiver.onERC721Received.selector,
             "UNSAFE_RECIPIENT"
         );
-
     }
 
     function safeTransferFrom(
@@ -290,6 +290,7 @@ contract Registry is BaseRelayRecipient, ERC721 {
 
     function tokenURI(uint256 channelId) public view override returns (string memory) {
         require(channelId < currentChannelId, "TOKEN_DOES_NOT_EXIST");
-        return channelTokenURIGenerator.generateTokenURI(channelId, ownerOf[channelId], channelIdToChannelName[channelId]);
+        return
+            channelTokenURIGenerator.generateTokenURI(channelId, ownerOf[channelId], channelIdToChannelName[channelId]);
     }
 }
