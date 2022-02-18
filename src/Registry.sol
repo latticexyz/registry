@@ -23,24 +23,26 @@ interface ChannelTokenURIGenerator {
     ) external view returns (string memory);
 }
 
-struct Instance {
-    address contractAddress;
-    uint256 chainId;
-    string instanceURI;
-}
-
 contract Registry is BaseRelayRecipient, ERC721 {
     event ChannelCreated(uint256 indexed channelId, string indexed channelName, address indexed channelOwner);
     event InstanceCreated(uint256 indexed instanceId, address indexed creator, Instance instance);
     event InstanceURIUpdated(uint256 indexed instanceId, string instanceURI);
     event InstanceAddedToChannel(uint256 indexed channelId, uint256 indexed instanceId);
     event InstanceRemovedFromChannel(uint256 indexed channelId, uint256 indexed instanceId);
+    event NewChannelTokenURIGenerator(address indexed generator);
 
     address public contractOwner;
+    uint256 public currentChannelId;
     uint256 internal currentInstanceId;
-    uint256 internal currentChannelId;
 
     ChannelTokenURIGenerator public channelTokenURIGenerator;
+
+    struct Instance {
+        address creator;
+        address contractAddress;
+        uint256 chainId;
+        string instanceURI;
+    }
 
     // CHANNELS
     // address => can mint channel
@@ -51,9 +53,6 @@ contract Registry is BaseRelayRecipient, ERC721 {
     mapping(uint256 => string) public channelIdToChannelName;
 
     // INSTANCES
-
-    // instance id => creator
-    mapping(uint256 => address) public creatorOf;
     // instance id => instance
     mapping(uint256 => Instance) public instances;
 
@@ -88,7 +87,7 @@ contract Registry is BaseRelayRecipient, ERC721 {
     }
 
     modifier onlyInstanceCreator(uint256 instanceId) {
-        require(_msgSender() == creatorOf[instanceId], "ONLY_INSTANCE_CREATOR");
+        require(_msgSender() == instances[instanceId].creator, "ONLY_INSTANCE_CREATOR");
         _;
     }
 
@@ -114,6 +113,7 @@ contract Registry is BaseRelayRecipient, ERC721 {
 
     function setChannelTokenURIGeneratorAddress(address channelTokenURIGeneratorAddr) public onlyContractOwner {
         channelTokenURIGenerator = ChannelTokenURIGenerator(channelTokenURIGeneratorAddr);
+        emit NewChannelTokenURIGenerator(channelTokenURIGeneratorAddr);
     }
 
     function setOwner(address newContractOwner) public onlyContractOwner {
@@ -134,16 +134,14 @@ contract Registry is BaseRelayRecipient, ERC721 {
         require(chainId != 0, "NO_CHAIN_ID");
         require(bytes(instanceURI).length != 0, "NO_INSTANCE_URI");
 
-        address creator = _msgSender();
-
         instances[currentInstanceId] = Instance({
             contractAddress: contractAddress,
             chainId: chainId,
-            instanceURI: instanceURI
+            instanceURI: instanceURI,
+            creator: _msgSender()
         });
 
-        creatorOf[currentInstanceId] = creator;
-        emit InstanceCreated(currentInstanceId, creator, instances[currentInstanceId]);
+        emit InstanceCreated(currentInstanceId, _msgSender(), instances[currentInstanceId]);
         currentInstanceId++;
     }
 
@@ -157,35 +155,30 @@ contract Registry is BaseRelayRecipient, ERC721 {
                                CHANNELS
     //////////////////////////////////////////////////////////////*/
 
-    function _validateChannelName(string memory channelName) internal returns (bool) {
+    function _validateChannelName(string memory channelName) internal pure returns (bool) {
         bytes memory _bytes = abi.encodePacked(bytes(channelName));
-        bytes1 char;
-        uint8 charInt;
+
+        // Validation: Name between 3 - 30 characters
+        if (_bytes.length < 3 || _bytes.length > 30) return false;
+
+        // Validation: No special characters
+        // Only lowercase letters and "-"
         for (uint256 i = 0; i < _bytes.length; i++) {
-            char = _bytes[i];
-            charInt = uint8(char);
-            // Validation: No special characters
-            // Only lowercase letters and "-"
-            if (!((charInt >= 97 && charInt <= 122) || (charInt == 46))) {
-                return false;
-            }
+            bytes1 char = _bytes[i];
+            uint8 charInt = uint8(char);
+            if (!((charInt >= 97 && charInt <= 122) || (charInt == 46))) return false;
         }
-        if (_bytes.length < 3) {
-            return false;
-        }
-        if (_bytes.length > 30) {
-            return false;
-        }
+
         return true;
     }
 
     function addInstanceToChannel(uint256 channelId, uint256 instanceId) public onlyChannelOwner(channelId) {
-        require(creatorOf[instanceId] != address(0));
+        require(instances[instanceId].creator != address(0), "INSTANCE_DOES_NOT_EXIST");
         emit InstanceAddedToChannel(channelId, instanceId);
     }
 
     function removeInstanceFromChannel(uint256 channelId, uint256 instanceId) public onlyChannelOwner(channelId) {
-        require(creatorOf[instanceId] != address(0));
+        require(instances[instanceId].creator != address(0), "INSTANCE_DOES_NOT_EXIST");
         emit InstanceRemovedFromChannel(channelId, instanceId);
     }
 
@@ -193,19 +186,23 @@ contract Registry is BaseRelayRecipient, ERC721 {
                                ERC721
     //////////////////////////////////////////////////////////////*/
 
+    // Note: This mints channel
     function mint(address to, string memory channelName) public onlyMinter returns (uint256 id) {
         require(_validateChannelName(channelName), "CHANNEL_NAME_INVALID");
         require(channelNameToChannelId[channelName] == 0, "CHANNEL_ALREADY_EXISTS");
+
+        id = currentChannelId;
         _mint(to, currentChannelId);
+
         channelNameToChannelId[channelName] = currentChannelId;
         channelIdToChannelName[currentChannelId] = channelName;
+
         emit ChannelCreated(currentChannelId, channelName, ownerOf[currentChannelId]);
         currentChannelId++;
     }
 
     function approve(address spender, uint256 id) public override {
         address owner = ownerOf[id];
-
         require(_msgSender() == owner || isApprovedForAll[owner][_msgSender()], "NOT_AUTHORIZED");
 
         getApproved[id] = spender;

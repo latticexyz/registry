@@ -54,9 +54,9 @@ contract SimpleChannelTokenURIGenerator is ChannelTokenURIGenerator {
                     '{"name": "Channel: ',
                     channelName,
                     unicode'", "description": "The Lattice Channels are used for the permisionless distribution of open games on the Lattice Protocol.\\n\\nView this NFT at [https://lattice.xyz/channel/',
-                    channelId,
+                    channelName,
                     "](https://lattice.xyz/channel/",
-                    channelId,
+                    channelName,
                     ')"}'
                 )
             );
