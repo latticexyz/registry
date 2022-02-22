@@ -24,7 +24,8 @@
     "graph:codegen": "yarn graph:export-abi && graph codegen subgraphs/subgraph.yaml -o subgraphs/generated",
     "graph:build:subgraph": "graph build subgraphs/subgraph.yaml -o subgraph-build",
     "graph:build": "yarn graph:export-abi && yarn graph:codegen && yarn graph:build:subgraph",
-    "graph:deploy": "graph deploy --node https://api.thegraph.com/deploy/ latticexyz/registry subgraphs/subgraph.yaml"
+    "graph:deploy:gc": "dotenv -- graph deploy --node https://api.thegraph.com/deploy/ latticexyz/registry subgraphs/subgraph.yaml",
+    "graph:deploy:kovan": "dotenv -- graph deploy --node https://api.thegraph.com/deploy/ latticexyz/registry-kovan subgraphs/subgraph-kovan.yaml"
   },
   "repository": {
     "type": "git",
