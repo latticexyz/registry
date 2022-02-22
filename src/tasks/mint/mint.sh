@@ -1,1 +1,1 @@
-cast send $1 "mint(address,string)" "$2" "$3" --interactive --rpc-url "https://rpc.xdaichain.com" --private-key $4
+cast send $1 "mint(address,string)" "$2" "$3" --interactive --rpc-url $RPC_URL --private-key $PKEY

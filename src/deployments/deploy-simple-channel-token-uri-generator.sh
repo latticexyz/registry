@@ -1,1 +1,1 @@
-forge create SimpleChannelTokenURIGenerator --rpc-url "https://rpc.xdaichain.com" --private-key $1 --force
+forge create SimpleChannelTokenURIGenerator --rpc-url $RPC_URL --chain kovan --private-key $PKEY --force

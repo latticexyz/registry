@@ -1,6 +1,6 @@
 import { ethers} from "ethers"
 import { argv } from "process";
-const [registryAddress, instanceId, instanceURI, privateKey] = argv.slice(2) 
+const [registryAddress, instanceId, instanceURI] = argv.slice(2) 
 const ABI = `
 [
     {
@@ -24,8 +24,8 @@ const ABI = `
 ]
 `
 const main = async () => {
-  const wallet = new ethers.Wallet(privateKey)
-  const provider = new ethers.providers.JsonRpcProvider("https://rpc.xdaichain.com")
+  const wallet = new ethers.Wallet(process.env.PKEY!)
+  const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL)
   const signer = wallet.connect(provider)
   const registryInterface = new ethers.utils.Interface(ABI)
   const contract = new ethers.Contract(registryAddress, registryInterface, signer)

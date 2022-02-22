@@ -1,7 +1,7 @@
 import { ethers} from "ethers"
 import { argv } from "process";
 import { createInterface } from "readline";
-const [registryAddress, privateKey] = argv.slice(2) 
+const [registryAddress] = argv.slice(2) 
 
 
 export async function question(query : string, options? : {choices: string[]}) {
@@ -52,8 +52,8 @@ const ABI = `
 ]
 `
 const main = async () => {
-  const wallet = new ethers.Wallet(privateKey)
-  const provider = new ethers.providers.JsonRpcProvider("https://rpc.xdaichain.com")
+  const wallet = new ethers.Wallet(process.env.PKEY!)
+  const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL)
   const signer = wallet.connect(provider)
   const registryInterface = new ethers.utils.Interface(ABI)
   const contract = new ethers.Contract(registryAddress, registryInterface, signer)

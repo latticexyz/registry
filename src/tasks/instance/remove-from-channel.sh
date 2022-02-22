@@ -1,1 +1,1 @@
-cast send $1 "removeInstanceFromChannel(uint256,uint256)" "$2" "$3" --rpc-url "https://rpc.xdaichain.com" --private-key $4
+cast send $1 "removeInstanceFromChannel(uint256,uint256)" "$2" "$3" --rpc-url $RPC_URL --private-key $PKEY

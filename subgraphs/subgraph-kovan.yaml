@@ -1,0 +1,38 @@
+specVersion: 0.0.2
+description: Registry
+repository: https://github.com/latticexyz/registry
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: Registry
+    network: kovan
+    source:
+      address: "0xeec1d7f6774553ef999f8692433d493755d8c79e"
+      abi: Registry
+      startBlock: 29981750
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Token
+        - Owner
+        - Transfer
+      abis:
+        - name: Registry
+          file: ./abis/Registry.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+        - event: InstanceCreated(indexed uint256,indexed address,(address,address,uint256,string))
+          handler: handleInstanceCreated
+        - event: InstanceURIUpdated(indexed uint256,string)
+          handler: handleInstanceURIUpdated
+        - event: InstanceAddedToChannel(indexed uint256,indexed uint256)
+          handler: handleInstanceAddedToChannel
+        - event: InstanceRemovedFromChannel(indexed uint256,indexed uint256)
+          handler: handleInstanceRemovedFromChannel
+        - event: NewChannelTokenURIGenerator(indexed address)
+          handler: handleNewChannelTokenURIGenerator
+      file: ./src/mapping.ts
