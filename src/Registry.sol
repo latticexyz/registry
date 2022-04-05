@@ -166,7 +166,7 @@ contract Registry is BaseRelayRecipient, ERC721 {
         for (uint256 i = 0; i < _bytes.length; i++) {
             bytes1 char = _bytes[i];
             uint8 charInt = uint8(char);
-            if (!((charInt >= 97 && charInt <= 122) || (charInt == 46))) return false;
+            if (!((charInt >= 97 && charInt <= 122) || (charInt == 45))) return false;
         }
 
         return true;
