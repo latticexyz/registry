@@ -20,30 +20,38 @@ const CHAIN_ID_TO_TRUSTED_FORWARDER = {
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
-// TODO: add support for GC via a simple loop.
-const chainId = 42;
-const RPC = CHAIN_ID_TO_RPC[chainId];
+let deployments = {};
+let EXISTING_DEPLOYMENT = JSON.parse(fs.readFileSync('deployment.json', { encoding: 'utf8', flag: 'r' }));
 
-// Deploy the proxy contract.
-process.env.PKEY = PRIVATE_KEY;
-process.env.RPC_URL = RPC;
+for (const chainId of CHAIN_IDS) {
+    if (!Object.keys(CHAIN_ID_TO_RPC).includes(chainId.toString())) {
+        throw new Error("Can't deploy on chainId: " + chainId)
+    }
+    const RPC = CHAIN_ID_TO_RPC[chainId];
 
-const { stdout: contractDeployOutput } = await $`bash src/deployments/proxy-registry-instance-adder/deploy-contract.sh`;
+    // Deploy the proxy contract.
+    process.env.PKEY = PRIVATE_KEY;
+    process.env.RPC_URL = RPC;
 
-// Set the Registry address on the proxy contract.
-const PROXY_CONTRACT_ADDRESS = parseForgeCreateDeploy(contractDeployOutput);
-const REGISTRY_ADDRESS = await question(`Where is Registry deployed on chain: ${chainId}?`);
+    const { stdout: contractDeployOutput } = await $`bash src/deployments/proxy-registry-instance-adder/deploy-contract.sh`;
 
-const { stdout: setRegistryOutput } = await $`bash src/deployments/proxy-registry-instance-adder/set-registry.sh ${PROXY_CONTRACT_ADDRESS} ${REGISTRY_ADDRESS}`;
+    // Set the Registry address on the proxy contract.
+    const PROXY_CONTRACT_ADDRESS = parseForgeCreateDeploy(contractDeployOutput);
 
-// Set the trusted forwarder for GSN.
-const TRUSTED_FORWARDER_ADDRESS = CHAIN_ID_TO_TRUSTED_FORWARDER[chainId];
-const { stdout: setTrustedForwarderOutpu } = await $`bash src/deployments/proxy-registry-instance-adder/set-trusted-forwarder.sh ${PROXY_CONTRACT_ADDRESS} ${TRUSTED_FORWARDER_ADDRESS}`;
+    // Read the Registry address from the deployments file.
+    const REGISTRY_ADDRESS = EXISTING_DEPLOYMENT['registry'][chainId];
+    console.log(chalk.yellow(`Registry is deployed at address ${REGISTRY_ADDRESS} on chainId=${chainId}`));
+
+    await $`bash src/deployments/proxy-registry-instance-adder/set-registry.sh ${PROXY_CONTRACT_ADDRESS} ${REGISTRY_ADDRESS}`;
+
+    // Set the trusted forwarder for GSN.
+    const TRUSTED_FORWARDER_ADDRESS = CHAIN_ID_TO_TRUSTED_FORWARDER[chainId];
+    await $`bash src/deployments/proxy-registry-instance-adder/set-trusted-forwarder.sh ${PROXY_CONTRACT_ADDRESS} ${TRUSTED_FORWARDER_ADDRESS}`;
+
+    deployments[chainId] = PROXY_CONTRACT_ADDRESS;
+}
 
 console.log(chalk.green(`Done deploying and setting up ProxyRegistryInstanceAdder`));
 
-let DEPLOYMENT = JSON.parse(fs.readFileSync('deployment.json', { encoding: 'utf8', flag: 'r' }));
-DEPLOYMENT['proxy'] = {
-    100: PROXY_CONTRACT_ADDRESS
-};
-fs.writeFileSync('deployment.json', JSON.stringify(DEPLOYMENT));
+EXISTING_DEPLOYMENT['proxy'] = deployments;
+fs.writeFileSync('deployment.json', JSON.stringify(EXISTING_DEPLOYMENT));
