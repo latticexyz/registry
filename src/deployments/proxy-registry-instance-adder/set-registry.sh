@@ -1,0 +1,1 @@
+cast send $1 "setRegistryAddress(address)" "$2" --rpc-url $RPC_URL --private-key $PKEY 
