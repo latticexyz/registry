@@ -5,6 +5,8 @@ import {BaseRelayRecipient} from "gsn/BaseRelayRecipient.sol";
 
 interface Registry {
     function addInstanceToChannel(uint256 channelId, uint256 instanceId) external;
+
+    function removeInstanceFromChannel(uint256 channelId, uint256 instanceId) external;
 }
 
 contract ProxyRegistryInstanceAdder is BaseRelayRecipient {
@@ -56,5 +58,9 @@ contract ProxyRegistryInstanceAdder is BaseRelayRecipient {
 
     function addInstanceToChannel(uint256 channelId, uint256 instanceId) public {
         registry.addInstanceToChannel(channelId, instanceId);
+    }
+
+    function removeInstanceFromChannel(uint256 channelId, uint256 instanceId) public onlyContractOwner {
+        registry.removeInstanceFromChannel(channelId, instanceId);
     }
 }
