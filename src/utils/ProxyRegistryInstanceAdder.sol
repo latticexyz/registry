@@ -7,6 +7,12 @@ interface Registry {
     function addInstanceToChannel(uint256 channelId, uint256 instanceId) external;
 
     function removeInstanceFromChannel(uint256 channelId, uint256 instanceId) external;
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id
+    ) external;
 }
 
 contract ProxyRegistryInstanceAdder is BaseRelayRecipient {
@@ -50,6 +56,10 @@ contract ProxyRegistryInstanceAdder is BaseRelayRecipient {
 
     function setRegistryAddress(address registryAddress) public onlyContractOwner {
         registry = Registry(registryAddress);
+    }
+
+    function withdrawChannel(uint256 channelId) public onlyContractOwner {
+        registry.safeTransferFrom(address(this), contractOwner, channelId);
     }
 
     /*///////////////////////////////////////////////////////////////
